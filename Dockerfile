@@ -20,6 +20,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
     docker-php-ext-configure intl && \
     docker-php-ext-install bcmath calendar exif gd gmp intl mysqli pdo pdo_mysql zip
 
+# Instalando extensões para utilizar o REDIS
+RUN pecl install redis && docker-php-ext-enable redis
+
 # Instalando Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/local/bin/composer
 
