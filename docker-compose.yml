@@ -57,13 +57,13 @@ domservices:
     container_name: krayin-crm
     volumes:
       - krayin_data:/var/www/html/
-	    - /home/deploy/krayin.env:/var/www/html/krayin/.env   # <-- Monte seu .env local aqui
+      - /home/deploy/krayin.env:/var/www/html/krayin/.env   # <-- Monte seu .env local aqui
     #ports:
     #  - 2020:80
     networks:
       - network_public
     environment:
-      - krayin_PUBLIC_URL=https://krayincrm.seudominio.com
+      - krayin_PUBLIC_URL=https://krayincrm.seudominio.com # colocar o dominio correto.
       - krayin_CADDY_ADDRESSES=:80
       - DB_HOST=krayin-mysql
       - DB_USERNAME=root
@@ -76,7 +76,7 @@ domservices:
           - node.role == manager
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.krayin.rule=Host(`krayincrm.queroenergiasolar.com`)"
+      - "traefik.http.routers.krayin.rule=Host(`krayincrm.seudominio.com`)" # colocar o dominio correto.
       - "traefik.http.routers.krayin.entrypoints=websecure"
       - "traefik.http.routers.krayin.tls=true"
       - "traefik.http.routers.krayin.tls.certresolver=leresolver"
