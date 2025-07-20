@@ -1,55 +1,98 @@
-version: "3.1"
-
 services:
-  krayin-php-apache:
-    build:
-      args:
-        container_project_path: /var/www/html/
-        uid: 1519
-        user: $USER
-      context: .
-      dockerfile: ./Dockerfile
-    image: krayin-php-apache
-    ports:
-      - 80:80
-    volumes:
-      - ./workspace/:/var/www/html/
-
   krayin-mysql:
-    image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password
+    image: percona/percona-server:latest
+    container_name: krayin-mysql
     environment:
-      MYSQL_ROOT_HOST: "%"
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - 3306:3306
+      - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+      - TZ=America/Sao_Paulo
+    networks:
+      - network_public
+    #ports:
+      #- 3306:3306
     volumes:
-      - ./.configs/mysql-data:/var/lib/mysql/
-
+      - krayin_mysql_data:/var/lib/mysql
+      - /home/deploy/krayin-crm/init-script.sql:/docker-entrypoint-initdb.d/init-script.sql
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+          #- node.hostname == worker1
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1024M
+    command:
+      [
+        "--character-set-server=utf8mb4",
+        "--collation-server=utf8mb4_general_ci",
+        "--sql-mode=",
+        "--default-authentication-plugin=mysql_native_password",
+        "--max-allowed-packet=512MB",
+        "--expire_logs_days=7",
+        "--max_binlog_size=100M"		
+      ]
+      
   krayin-redis:
-    image: redis:6.2-alpine
-    ports:
-      - 6379:6379
-    command: redis-server --save 20 1 --loglevel warning
+    image: redis:7-alpine
+    container_name: krayin-redis
+    networks:
+      - network_public
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager	
+
+########################
+
+# Entrar no conteiner do krayin e executar
+
+# Editar a logo em /var/lib/docker/volumes/krayin_data/_data/laravel-crm/public/admin/build/assets
+
+# Substitua os arquivos: logo-0db24d41.svg e o favicon: favicon-a99d4e55.ico
+
+########################
+
+  krayin-crm:
+    image: krayin-crm-arm64
+    container_name: krayin-crm
     volumes:
-      - ./.configs/redis-data:/data
-
-  krayin-phpmyadmin:
-    image: phpmyadmin:latest
+      - krayin_data:/var/www/html/
+	    - /home/deploy/krayin.env:/var/www/html/krayin/.env   # <-- Monte seu .env local aqui
+    #ports:
+    #  - 2020:80
+    networks:
+      - network_public
     environment:
-      PMA_HOST: krayin-mysql
-      PMA_USER: root
-      PMA_PASSWORD: root
-      UPLOAD_LIMIT: 512M
-    ports:
-      - 8080:80
+      - krayin_PUBLIC_URL=https://krayincrm.queroenergiasolar.com
+      - krayin_CADDY_ADDRESSES=:80
+	  - DB_HOST=krayin-mysql
+      - DB_USERNAME=root
+      - DB_PASSWORD=$MYSQL_ROOT_PASSWORD
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.krayin.rule=Host(`krayincrm.queroenergiasolar.com`)"
+      - "traefik.http.routers.krayin.entrypoints=websecure"
+      - "traefik.http.routers.krayin.tls=true"
+      - "traefik.http.routers.krayin.tls.certresolver=leresolver"
+      - "traefik.http.services.krayin.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.krayin-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.krayin.middlewares=krayin-headers"
 
-  krayin-mailhog:
-      image: mailhog/mailhog
-      logging:
-          # Disable saving logs.
-          driver: 'none'
-      ports:
-          # SMTP server.
-          - 1025:1025
-          - 8025:8025
+volumes:
+  krayin_mysql_data:
+    external: true
+    name: krayin_mysql_data
+  krayin_data:
+    external: true
+    name: krayin_data
+
+networks:
+  network_public:
+    external: true
+    name: network_public
