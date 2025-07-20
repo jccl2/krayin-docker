@@ -1,11 +1,17 @@
 #!/bin/bash
 set -e
 
-# Espera o banco de dados ficar disponível
-echo "Aguardando o banco de dados ficar disponível em $DB_HOST..."
-until mysql -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" -e "select 1" &> /dev/null; do
+# Esperando o banco de dados via PHP (Laravel tenta conectar)
+until php artisan migrate:status --no-ansi > /dev/null 2>&1; do
+  echo "Aguardando o banco de dados ficar disponível em $DB_HOST..."
   sleep 2
 done
+
+# Espera o banco de dados ficar disponível
+#echo "Aguardando o banco de dados ficar disponível em $DB_HOST..."
+#until mysql -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" -e "select 1" &> /dev/null; do
+#  sleep 2
+#done
 
 cd /var/www/html/krayin
 
