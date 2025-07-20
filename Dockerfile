@@ -1,7 +1,6 @@
-# main image
 FROM php:8.3-apache
 
-# installing dependencies
+# Instalando dependências do sistema
 RUN apt-get update && apt-get install -y \
     git \
     ffmpeg \
@@ -16,45 +15,48 @@ RUN apt-get update && apt-get install -y \
     unzip \
     zlib1g-dev
 
-# configuring php extension
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
-RUN docker-php-ext-configure intl
+# Configurando e instalando extensões PHP
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
+    docker-php-ext-configure intl && \
+    docker-php-ext-install bcmath calendar exif gd gmp intl mysqli pdo pdo_mysql zip
 
-# installing php extension
-RUN docker-php-ext-install bcmath calendar exif gd gmp intl mysqli pdo pdo_mysql zip
-
-# installing composer
+# Instalando Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/local/bin/composer
 
-# installing node js
+# Instalando Node.js
 COPY --from=node:22.9 /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node:22.9 /usr/local/bin/node /usr/local/bin/node
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
 
-# installing global node dependencies
-RUN npm install -g npx
-RUN npm install -g laravel-echo-server
+# Instalando dependências globais Node.js
+RUN npm install -g npx laravel-echo-server
 
-# arguments
-ARG container_project_path
-ARG uid
-ARG user
-
-# setting work directory
-WORKDIR $container_project_path
-
-# adding user
-RUN useradd -G www-data,root -u $uid -d /home/$user $user
-RUN mkdir -p /home/$user/.composer && \
-    chown -R $user:$user /home/$user
-
-# setting apache
-COPY ./.configs/apache.conf /etc/apache2/sites-available/000-default.conf
+# Habilitando o mod_rewrite do Apache
 RUN a2enmod rewrite
 
-# setting up project from `src` folder
-RUN chmod -R 775 $container_project_path
-RUN chown -R $user:www-data $container_project_path
+# Clonando o Krayin CRM (pode ser ajustado para usar um volume também)
+WORKDIR /var/www/html
+RUN git clone https://github.com/jccl2/krayin-crm-docker krayin
 
-# changing user
-USER $user
+WORKDIR /var/www/html/krayin
+
+# Opcional: setar versão fixa
+#RUN git reset --hard v2.0.1
+
+# Instalando dependências do Composer
+RUN composer install --no-interaction --optimize-autoloader
+
+# Permissões corretas para o storage e cache
+RUN chown -R www-data:www-data /var/www/html/krayin/storage /var/www/html/krayin/bootstrap/cache
+
+# Copie os arquivos .env na build OU monte como volume depois
+# COPY .configs/.env .env
+# COPY .configs/.env.testing .env.testing
+
+EXPOSE 80
+
+# Copie o entrypoint que aguarda o banco, executa migrations e comandos finais
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
