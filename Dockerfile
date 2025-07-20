@@ -1,6 +1,6 @@
 FROM php:8.3-apache
 
-# Instalando dependências do sistema
+# Instala dependências do sistema, PHP extensions, Composer, Node etc...
 RUN apt-get update && apt-get install -y \
     git \
     ffmpeg \
@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y \
     libxpm-dev \
     libzip-dev \
     unzip \
-    zlib1g-dev
+    zlib1g-dev \
+    default-mysql-client
 
 # Configurando e instalando extensões PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
