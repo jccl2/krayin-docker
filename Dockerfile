@@ -53,6 +53,9 @@ RUN composer install --no-interaction --optimize-autoloader
 # Permissões corretas para o storage e cache
 RUN chown -R www-data:www-data /var/www/html/krayin/storage /var/www/html/krayin/bootstrap/cache
 
+# AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using IP. Set the 'ServerName' directive globally to suppress this message
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 # Copie os arquivos .env na build OU monte como volume depois
 # COPY .configs/.env .env
 # COPY .configs/.env.testing .env.testing
