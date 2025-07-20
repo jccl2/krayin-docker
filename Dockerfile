@@ -35,6 +35,9 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
 # Instalando dependências globais Node.js
 RUN npm install -g npx laravel-echo-server
 
+# Copiar a config do apache
+COPY ./.configs/apache.conf /etc/apache2/sites-available/000-default.conf
+
 # Habilitando o mod_rewrite do Apache
 RUN a2enmod rewrite
 
