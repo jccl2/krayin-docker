@@ -1,4 +1,4 @@
-services:
+domservices:
   krayin-mysql:
     image: percona/percona-server:latest
     container_name: krayin-mysql
@@ -63,9 +63,9 @@ services:
     networks:
       - network_public
     environment:
-      - krayin_PUBLIC_URL=https://krayincrm.queroenergiasolar.com
+      - krayin_PUBLIC_URL=https://krayincrm.seudominio.com
       - krayin_CADDY_ADDRESSES=:80
-	  - DB_HOST=krayin-mysql
+      - DB_HOST=krayin-mysql
       - DB_USERNAME=root
       - DB_PASSWORD=$MYSQL_ROOT_PASSWORD
     deploy:
