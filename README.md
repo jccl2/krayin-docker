@@ -83,6 +83,9 @@ With the help of docker-compose, one can define containers to be built, their co
   ~~~sh
   sh setup.sh
   ~~~
+ Or
+
+- Build the docker file and up the container.
 
 ## After installation
 
