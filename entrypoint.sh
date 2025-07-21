@@ -33,6 +33,8 @@ if [ "$MIGRATED" -gt 0 ]; then
   php artisan storage:link
   php artisan vendor:publish --provider='Webkul\Core\Providers\CoreServiceProvider' --force
   php artisan optimize:clear
+  php artisan config:clear
+  php artisan config:cache
 else
   echo "Banco ainda não migrado. Executando migrate --seed para setup inicial."
   php artisan optimize:clear
@@ -40,6 +42,8 @@ else
   php artisan storage:link
   php artisan vendor:publish --provider='Webkul\Core\Providers\CoreServiceProvider' --force
   php artisan optimize:clear
+  php artisan config:clear
+  php artisan config:cache
 fi
 
 exec apache2-foreground
